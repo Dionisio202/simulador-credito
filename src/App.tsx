@@ -1,25 +1,36 @@
-
-import Login from './components/Login'
+import Login from './pages/Login';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import InformesEconomicos from './pages/InformesEconomicos';
 import PerspectivasMercado from './pages/PerspectivasMercado';
 
-function App() {
+import { ToastContainer } from 'react-toastify'; // 👈 Importas el ToastContainer
+import 'react-toastify/dist/ReactToastify.css';   // 👈 Importas los estilos CSS
 
+function App() {
   return (
     <Router>
-    <Navbar />
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/vision-mercado/informes" element={<InformesEconomicos />} /> {/* 👈 Nueva ruta */}
-      <Route path="/vision-mercado/perspectivas" element={<PerspectivasMercado />} /> {/* Aquí la nueva ruta */}
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/vision-mercado/informes" element={<InformesEconomicos />} />
+        <Route path="/vision-mercado/perspectivas" element={<PerspectivasMercado />} />
+      </Routes>
 
-    </Routes>
-  </Router>
-  )
+      <ToastContainer 
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+    </Router>
+  );
 }
 
-export default App
+export default App;

@@ -11,6 +11,10 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { API_URL } from './constants/api';
 import { setQuantumColorsFromAPI } from './styles/colors';
+import ConfigCreditos from "./pages/ConfigCreditos";
+import ConfigInversiones from "./pages/ConfigInversiones";
+import ConfigInterfaz from "./pages/ConfigInterfaz";
+import "react-toastify/dist/ReactToastify.css"; // 👈 Importas los estilos CSS
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,13 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/vision-mercado/perspectivas" element={<PerspectivasMercado />} />
+        <Route
+          path="/vision-mercado/perspectivas"
+          element={<PerspectivasMercado />}
+        />
+        <Route path="/config-creditos" element={<ConfigCreditos />} />
+        <Route path="/config-inversiones" element={<ConfigInversiones />} />
+        <Route path="/config-interfaz" element={<ConfigInterfaz />} />
       </Routes>
 
       <ToastContainer

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../constants/api';
+import AdminMenu from './AdminMenu';
 
 interface RawMenuItem {
   id: number;
@@ -25,11 +26,12 @@ const Navbar = () => {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [configuracion, setConfiguracion] = useState<ConfiguracionGlobal | null>(null);
 
+  const isAdmin = true; // ✅ Asumimos que el usuario es administrador (reemplazar con auth real si es necesario)
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -54,10 +56,7 @@ const Navbar = () => {
         const formattedMenu = parents.map(parent => {
           const submenuData = groupedChildren[parent.id];
           if (submenuData) {
-            const submenu = Object.entries(submenuData).map(([category, items]) => ({
-              category,
-              items,
-            }));
+            const submenu = Object.entries(submenuData).map(([category, items]) => ({ category, items }));
             return { label: parent.label, path: parent.path, hasSubmenu: true, submenu };
           } else {
             return { label: parent.label, path: parent.path, hasSubmenu: false };
@@ -150,6 +149,11 @@ const Navbar = () => {
               )}
             </div>
           ))}
+
+          {isAdmin && (
+            <AdminMenu />
+          )}
+
           <Link to="/login" className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded transition duration-300 ml-4">
             Iniciar sesión
           </Link>

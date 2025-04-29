@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import logoQuantum from '../assets/logo-banco.png';
+import AdminMenu from './AdminMenu'; // 🔵 NUEVO: Importamos el combobox
 
 const Navbar = () => {
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false); // <<<<<< Nuevo: controlar el menú hamburguesa
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const isAdmin = true; // 🔵 NUEVO: Simulación de admin (luego lo conectas a tu contexto de auth)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,7 +18,6 @@ const Navbar = () => {
         setScrolled(false);
       }
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -46,7 +48,6 @@ const Navbar = () => {
         }
       ]
     },
- 
   ];
 
   return (
@@ -59,7 +60,7 @@ const Navbar = () => {
           <span className="font-bold text-xl text-gray-800">Quantum Capital</span>
         </div>
 
-        {/* Botón Hamburguesa (solo visible en móvil) */}
+        {/* Botón Hamburguesa */}
         <div className="lg:hidden">
           <button onClick={() => setMenuOpen(!menuOpen)} className="text-gray-700 hover:text-gray-900 focus:outline-none">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +96,7 @@ const Navbar = () => {
                 )}
               </Link>
 
-              {/* Submenú bonito (Desktop) */}
+              {/* Submenú */}
               {item.hasSubmenu && activeMenu === index && (
                 <div className="absolute top-full left-0 w-64 bg-white shadow-lg rounded-b-lg transition-all duration-300 opacity-100 visible border-t border-gray-200">
                   <div className="px-4 py-6">
@@ -121,7 +122,13 @@ const Navbar = () => {
               )}
             </div>
           ))}
-          {/* Botón Iniciar sesión en PC */}
+
+          {/* 🔵 NUEVO: Mostrar AdminMenu si el usuario es admin */}
+          {isAdmin && (
+            <AdminMenu />
+          )}
+
+          {/* Botón Iniciar sesión */}
           <Link
             to="/login"
             className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded transition duration-300 ml-4"

@@ -1,40 +1,125 @@
 import { Lightbulb, TrendingUp, BarChart2 } from 'lucide-react';
+import Footer from '../components/Footer';
+import { useEffect, useState } from 'react';
+import { API_URL } from '../constants/api';
+
+interface Contacto {
+  telefono?: string;
+  email?: string;
+  direccion?: string;
+}
+
+interface Servicio {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  imagenUrl: string;
+  link: string;
+}
+
+interface Perspectiva {
+  id: number;
+  seccionTipo: 'global' | 'ecuador';
+  titulo: string;
+  descripcion: string;
+  anio: number;
+}
+
+interface ConfiguracionGlobal {
+  backgroundWhite: string;
+  backgroundGray: string;
+  backgroundDark: string;
+  textLight: string;
+}
 
 const PerspectivasMercado = () => {
-  const secciones = [
-    {
-      icono: TrendingUp,
-      titulo: "Tendencias Globales",
-      descripcion:
-        "El Fondo Monetario Internacional (FMI) proyecta un crecimiento económico mundial del 2,8% para 2025, una disminución respecto al 3,3% de 2024, debido a tensiones comerciales y políticas proteccionistas.",
-    },
-    {
-      icono: Lightbulb,
-      titulo: "Sectores Estratégicos",
-      descripcion:
-        "Los sectores de energías renovables, tecnología financiera (FinTech) y salud digital continúan mostrando un crecimiento significativo, atrayendo inversiones a nivel global.",
-    },
-    {
-      icono: BarChart2,
-      titulo: "Proyecciones Económicas",
-      descripcion:
-        "En América Latina, se espera un crecimiento del 2,5% en 2025, impulsado por la recuperación económica en países como Argentina y la estabilización de las tasas de interés.",
-    },
-  ];
+  const [contacto, setContacto] = useState<Contacto | null>(null);
+  const [services, setServices] = useState<Servicio[]>([]);
+  const [perspectivasGlobales, setPerspectivasGlobales] = useState<Perspectiva[]>([]);
+  const [perspectivaEcuador, setPerspectivaEcuador] = useState<Perspectiva | null>(null);
+  const [anioActual, setAnioActual] = useState<number | null>(null);
+  const [configColors, setConfigColors] = useState<ConfiguracionGlobal | null>(null);
 
-  const perspectivaEcuador = {
-    titulo: "Perspectivas para Ecuador",
-    descripcion:
-      "El Banco Central del Ecuador proyecta un crecimiento del PIB del 2,8% para 2025, respaldado por un aumento en el consumo privado, inversiones en infraestructura y nuevos acuerdos comerciales.",
-  };
+  useEffect(() => {
+    const fetchConfiguracion = async () => {
+      try {
+        const response = await fetch(`${API_URL}/configuration/configuracion-global`);
+        const data = await response.json();
+        if (data.length > 0) setConfigColors(data[0]);
+      } catch (error) {
+        console.error("Error al cargar configuración global:", error);
+      }
+    };
+    fetchConfiguracion();
+  }, []);
+
+  useEffect(() => {
+    const fetchContacto = async () => {
+      try {
+        const response = await fetch(`${API_URL}/configuration/home-contacto`);
+        const data: Contacto = await response.json();
+        setContacto(data);
+      } catch (error) {
+        console.error("Error al cargar contacto:", error);
+      }
+    };
+    fetchContacto();
+  }, []);
+
+  useEffect(() => {
+    const fetchServicios = async () => {
+      try {
+        const response = await fetch(`${API_URL}/configuration/home-servicios`);
+        const data: Servicio[] = await response.json();
+        const mapped = data.map(serv => ({
+          ...serv,
+          imagenUrl: `${API_URL}${serv.imagenUrl}`
+        }));
+        setServices(mapped);
+      } catch (error) {
+        console.error('Error al cargar servicios:', error);
+      }
+    };
+    fetchServicios();
+  }, []);
+
+  useEffect(() => {
+    const fetchPerspectivas = async () => {
+      try {
+        const response = await fetch(`${API_URL}/configuration/perspectivas-mercado`);
+        const data: Perspectiva[] = await response.json();
+
+        const globales = data.filter(p => p.seccionTipo === 'global');
+        const ecuador = data.find(p => p.seccionTipo === 'ecuador') || null;
+
+        if (data.length > 0) {
+          setAnioActual(data[0].anio);
+        }
+
+        setPerspectivasGlobales(globales);
+        setPerspectivaEcuador(ecuador);
+      } catch (error) {
+        console.error('Error al cargar perspectivas:', error);
+      }
+    };
+    fetchPerspectivas();
+  }, []);
+
+  const footerServices = services.map(s => ({
+    label: s.titulo,
+    url: s.link
+  }));
+
+  if (!configColors) {
+    return <div className="min-h-screen flex justify-center items-center text-gray-600">Cargando...</div>;
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 pt-24">
-      {/* Encabezado */}
+    <div className={`flex flex-col min-h-screen ${configColors.backgroundGray} pt-24`}>
       <div className="bg-gradient-to-r from-blue-900 to-blue-700 py-16">
         <div className="container mx-auto px-6 text-center md:text-left">
           <h1 className="text-3xl md:text-4xl font-light text-white mb-3">
-            Perspectivas del <span className="font-bold">Mercado</span> 2025
+            Perspectivas del <span className="font-bold">Mercado</span> {anioActual}
           </h1>
           <div className="w-24 h-1 bg-blue-300 md:mx-0 mx-auto mb-6"></div>
           <p className="text-blue-100 md:max-w-2xl">
@@ -43,40 +128,47 @@ const PerspectivasMercado = () => {
         </div>
       </div>
 
-      {/* Contenido dinámico */}
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {secciones.map((item, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg shadow-md hover:shadow-lg p-6 transition"
-            >
-              <div className="flex items-center justify-center mb-4">
-                <item.icono className="text-blue-600" size={40} />
+          {perspectivasGlobales.map((item, index) => {
+            const Icon = index === 0 ? TrendingUp : index === 1 ? Lightbulb : BarChart2;
+            return (
+              <div key={item.id} className={`${configColors.backgroundWhite} rounded-lg shadow-md hover:shadow-lg p-6 transition`}>
+                <div className="flex items-center justify-center mb-4">
+                  <Icon className="text-blue-600" size={40} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">{item.titulo}</h3>
+                <p className="text-gray-600 whitespace-normal">{item.descripcion}</p>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-4">{item.titulo}</h3>
-              <p className="text-gray-600">{item.descripcion}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
-
-        {/* Perspectiva Ecuador */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">{perspectivaEcuador.titulo}</h2>
-          <p className="text-gray-600">{perspectivaEcuador.descripcion}</p>
-        </div>
+        {perspectivaEcuador && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">{perspectivaEcuador.titulo}</h2>
+            <p className="text-gray-600 whitespace-normal">{perspectivaEcuador.descripcion}</p>
+          </div>
+        )}
       </div>
 
-      {/* Newsletter */}
-      <div className="bg-gray-900 text-white py-16">
-        <div className="container mx-auto px-6 text-center">
-          <h3 className="text-2xl font-semibold mb-4">Manténgase Informado</h3>
-          <p className="text-gray-300 max-w-2xl mx-auto mb-8">
-            Suscríbase para recibir las últimas actualizaciones sobre las perspectivas económicas y oportunidades de inversión directamente en su correo electrónico.
-          </p>
-     
-        </div>
-      </div>
+      <Footer 
+        companyName="Quantum Capital"
+        description=""
+        copyright={`© ${anioActual || '2025'} Quantum Capital. Todos los derechos reservados.`}
+        bgColor={configColors.backgroundDark}
+        textColor={configColors.textLight}
+        servicesTitle="Servicios"
+        services={footerServices}
+        contactTitle="Contacto"
+        phoneNumber={contacto?.telefono || ''}
+        email={contacto?.email || ''}
+        address={contacto?.direccion || ''}
+        footerLinks={[
+          { label: "Políticas de Privacidad", url: "#" },
+          { label: "Términos y Condiciones", url: "#" },
+          { label: "Mapa del Sitio", url: "#" }
+        ]}
+      />
     </div>
   );
 };

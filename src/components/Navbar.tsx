@@ -1,65 +1,104 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import logoQuantum from '../assets/logo-banco.png';
+import { API_URL } from '../constants/api';
+
+interface RawMenuItem {
+  id: number;
+  parent_id: number | null;
+  label: string;
+  path: string;
+  category: string | null;
+  orden: number;
+}
+
+interface ConfiguracionGlobal {
+  id: number;
+  nombreEmpresa: string;
+  logoUrl: string;
+  backgroundWhite: string;
+}
 
 const Navbar = () => {
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false); // <<<<<< Nuevo: controlar el menú hamburguesa
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const [configuracion, setConfiguracion] = useState<ConfiguracionGlobal | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      setScrolled(window.scrollY > 10);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const menuItems = [
-    { label: 'Inicio', path: '/' },
-    { 
-      label: 'Productos', path: '#', hasSubmenu: true,
-      submenu: [
-        { 
-          category: 'PRODUCTOS DESTACADOS',
-          items: [
-            { label: 'Simulador de Crédito', path: '/simulador-credito' },
-            { label: 'Simulador de Inversión', path: '/simulador-inversion' },
-          ] 
-        }
-      ]
-    },
-    { 
-      label: 'Visión del mercado', path: '/vision-mercado', hasSubmenu: true,
-      submenu: [
-        { 
-          category: 'ANÁLISIS DE MERCADO',
-          items: [
-            { label: 'Informes económicos', path: '/vision-mercado/informes' },
-            { label: 'Perspectivas de inversión', path: '/vision-mercado/perspectivas' },
-          ]
-        }
-      ]
-    },
- 
-  ];
+  useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const res = await fetch(`${API_URL}/configuration/navbar`);
+        const data: RawMenuItem[] = await res.json();
+
+        const parents = data.filter(item => item.parent_id === null).sort((a, b) => a.orden - b.orden);
+        const children = data.filter(item => item.parent_id !== null);
+
+        const groupedChildren = children.reduce((acc, item) => {
+          const parent = item.parent_id!;
+          if (!acc[parent]) acc[parent] = {};
+          if (!acc[parent][item.category!]) acc[parent][item.category!] = [];
+          acc[parent][item.category!].push({ label: item.label, path: item.path });
+          return acc;
+        }, {} as Record<number, Record<string, { label: string; path: string }[]>>);
+
+        const formattedMenu = parents.map(parent => {
+          const submenuData = groupedChildren[parent.id];
+          if (submenuData) {
+            const submenu = Object.entries(submenuData).map(([category, items]) => ({
+              category,
+              items,
+            }));
+            return { label: parent.label, path: parent.path, hasSubmenu: true, submenu };
+          } else {
+            return { label: parent.label, path: parent.path, hasSubmenu: false };
+          }
+        });
+
+        setMenuItems(formattedMenu);
+      } catch (err) {
+        console.error("Error al cargar el menú:", err);
+      }
+    };
+
+    fetchMenuItems();
+  }, []);
+
+  useEffect(() => {
+    const fetchConfiguracion = async () => {
+      try {
+        const res = await fetch(`${API_URL}/configuration/configuracion-global`);
+        const data = await res.json();
+        setConfiguracion(data[0]);
+      } catch (err) {
+        console.error("Error al cargar configuración global:", err);
+      }
+    };
+
+    fetchConfiguracion();
+  }, []);
 
   return (
-    <nav className={`w-full fixed top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-md' : 'bg-white'}`}>
+    <nav className={`w-full fixed top-0 z-50 transition-all duration-300 ${scrolled ? `${configuracion?.backgroundWhite} shadow-md` : `${configuracion?.backgroundWhite}`}`}>
       <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between h-16 lg:h-20 relative">
-
-        {/* Logo */}
         <div className="flex items-center space-x-2">
-          <img src={logoQuantum} alt="Quantum Capital" className="w-10 h-10" />
-          <span className="font-bold text-xl text-gray-800">Quantum Capital</span>
+          {configuracion && (
+            <>
+              <img src={`${API_URL}${configuracion.logoUrl}`} alt={configuracion.nombreEmpresa} className="w-10 h-10" />
+              <span className="font-bold text-xl text-gray-800">{configuracion.nombreEmpresa}</span>
+            </>
+          )}
         </div>
 
-        {/* Botón Hamburguesa (solo visible en móvil) */}
         <div className="lg:hidden">
           <button onClick={() => setMenuOpen(!menuOpen)} className="text-gray-700 hover:text-gray-900 focus:outline-none">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,21 +111,15 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Menú Principal (Desktop) */}
         <div className="hidden lg:flex items-center space-x-8">
           {menuItems.map((item, index) => (
-            <div 
+            <div
               key={index}
               className="relative group"
               onMouseEnter={() => item.hasSubmenu && setActiveMenu(index)}
               onMouseLeave={() => setActiveMenu(null)}
             >
-              <Link 
-                to={item.path}
-                className={`flex items-center h-full border-b-2 px-1 transition-colors duration-300 ${
-                  activeMenu === index ? 'border-gray-800 text-gray-800' : 'border-transparent text-gray-700 hover:text-gray-800'
-                }`}
-              >
+              <Link to={item.path} className={`flex items-center h-full border-b-2 px-1 transition-colors duration-300 ${activeMenu === index ? 'border-gray-800 text-gray-800' : 'border-transparent text-gray-700 hover:text-gray-800'}`}>
                 {item.label}
                 {item.hasSubmenu && (
                   <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
@@ -95,20 +128,16 @@ const Navbar = () => {
                 )}
               </Link>
 
-              {/* Submenú bonito (Desktop) */}
               {item.hasSubmenu && activeMenu === index && (
-                <div className="absolute top-full left-0 w-64 bg-white shadow-lg rounded-b-lg transition-all duration-300 opacity-100 visible border-t border-gray-200">
+                <div className="absolute top-full left-0 w-64 bg-white shadow-lg rounded-b-lg transition-all duration-300 border-t border-gray-200">
                   <div className="px-4 py-6">
-                    {item.submenu.map((section, sectionIndex) => (
-                      <div key={sectionIndex} className="mb-6">
+                    {item.submenu.map((section: any, idx: number) => (
+                      <div key={idx} className="mb-6">
                         <h3 className="text-xs font-semibold text-gray-500 mb-4 uppercase tracking-wider">{section.category}</h3>
                         <ul className="space-y-2">
-                          {section.items.map((subItem, subIndex) => (
-                            <li key={subIndex}>
-                              <Link 
-                                to={subItem.path}
-                                className="block text-gray-700 hover:text-gray-900 hover:bg-gray-50 p-2 rounded transition-colors duration-200"
-                              >
+                          {section.items.map((subItem: any, sIdx: number) => (
+                            <li key={sIdx}>
+                              <Link to={subItem.path} className="block text-gray-700 hover:text-gray-900 hover:bg-gray-50 p-2 rounded transition-colors duration-200">
                                 {subItem.label}
                               </Link>
                             </li>
@@ -121,43 +150,27 @@ const Navbar = () => {
               )}
             </div>
           ))}
-          {/* Botón Iniciar sesión en PC */}
-          <Link
-            to="/login"
-            className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded transition duration-300 ml-4"
-          >
+          <Link to="/login" className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded transition duration-300 ml-4">
             Iniciar sesión
           </Link>
         </div>
 
-        {/* Menú lateral desplegable (Mobile) */}
         {menuOpen && (
           <div className="absolute top-16 left-0 w-full bg-white shadow-md border-t">
             <div className="flex flex-col p-4 space-y-4">
               {menuItems.map((item, index) => (
                 <div key={index}>
-                  <Link to={item.path} className="block text-gray-800 py-2 hover:text-blue-700">
-                    {item.label}
-                  </Link>
-                  {item.hasSubmenu && item.submenu?.map((section, sectionIndex) => (
-                    <div key={sectionIndex} className="ml-4 mt-2">
-                      {section.items.map((subItem, subIndex) => (
-                        <Link 
-                          key={subIndex}
-                          to={subItem.path}
-                          className="block text-gray-600 py-1 hover:text-blue-600"
-                        >
-                          {subItem.label}
-                        </Link>
+                  <Link to={item.path} className="block text-gray-800 py-2 hover:text-blue-700">{item.label}</Link>
+                  {item.hasSubmenu && item.submenu.map((section: any, idx: number) => (
+                    <div key={idx} className="ml-4 mt-2">
+                      {section.items.map((subItem: any, sIdx: number) => (
+                        <Link key={sIdx} to={subItem.path} className="block text-gray-600 py-1 hover:text-blue-600">{subItem.label}</Link>
                       ))}
                     </div>
                   ))}
                 </div>
               ))}
-              <Link
-                to="/login"
-                className="bg-gray-900 text-white text-center font-medium py-2 px-4 rounded transition duration-300"
-              >
+              <Link to="/login" className="bg-gray-900 text-white text-center font-medium py-2 px-4 rounded transition duration-300">
                 Iniciar sesión
               </Link>
             </div>

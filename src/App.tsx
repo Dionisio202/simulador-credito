@@ -71,6 +71,13 @@ function App() {
         draggable
         pauseOnHover
       />
+      {/* Clases necesarias para mantener configuraciones dinámicas desde el backend */}
+  <div className="hidden">
+    bg-white bg-black bg-blue-900 bg-blue-800 bg-blue-700 bg-blue-600
+    bg-gray-50 bg-gray-100 bg-gray-200 bg-gray-800 bg-gray-900
+    text-white text-black text-blue-100 text-blue-200 text-blue-300
+    text-gray-800 text-gray-700 text-gray-600
+  </div>
     </Router>
   );
 }

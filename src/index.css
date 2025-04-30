@@ -1,10 +1,1 @@
 @import "tailwindcss";
-:root {
-    --color-primary: #004b8d;         /* Azul corporativo */
-    --color-primary-light: #2563eb;
-    --color-primary-dark: #002f5f;
-    --color-accent: #ffd700;          /* Dorado */
-    --color-bg-light: #f9fafb;
-    --color-text: #1f2937;
-    --color-text-soft: #6b7280;
-  }

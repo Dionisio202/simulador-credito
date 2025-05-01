@@ -247,7 +247,14 @@ const ConfigTasasInversion: React.FC = () => {
               valueHasta={form.montoHasta}
               infinito={montoHastaInfinito}
               setInfinito={setMontoHastaInfinito}
-              onChangeDesde={(e) => setForm({ ...form, montoDesde: parseFloat(e.target.value) || 0 })}
+              onChangeDesde={(e) => {
+                const valor = e.target.value;
+                setForm({ 
+                  ...form, 
+                  montoDesde: valor === '' ? undefined : parseFloat(valor)
+                });
+              }}
+              
               onChangeHasta={(e) => {
                 const value = e.target.value;
                 setForm({ ...form, montoHasta: value === '' ? undefined : parseFloat(value) });
@@ -271,7 +278,13 @@ const ConfigTasasInversion: React.FC = () => {
               valueHasta={form.plazoHasta}
               infinito={plazoHastaInfinito}
               setInfinito={setPlazoHastaInfinito}
-              onChangeDesde={(e) => setForm({ ...form, plazoDesde: parseInt(e.target.value) || 0 })}
+              onChangeDesde={(e) => {
+                const valor = e.target.value;
+                setForm({ 
+                  ...form, 
+                  plazoDesde: valor === '' ? undefined : parseInt(valor)
+                });
+              }}
               onChangeHasta={(e) => {
                 const value = e.target.value;
                 setForm({ ...form, plazoHasta: value === '' ? undefined : parseInt(value) });
@@ -299,7 +312,13 @@ const ConfigTasasInversion: React.FC = () => {
                   type="number"
                   step="0.01"
                   value={form.tasa ?? ''}
-                  onChange={(e) => setForm({ ...form, tasa: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    setForm({ 
+                      ...form, 
+                      tasa: valor === '' ? undefined : parseFloat(valor)
+                    });
+                  }}
                   className="border border-gray-300 p-2 rounded w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="0.00"
                 />

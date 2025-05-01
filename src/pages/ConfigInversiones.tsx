@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createTasa, deleteTasa, getAllTasas, updateTasa } from '../services/investmentService.ts';
 
 interface TasaInversion {
   id: number;
@@ -8,16 +9,100 @@ interface TasaInversion {
   plazoHasta?: number;
   tasa: number;
 }
+interface InputRangeProps {
+  labelDesde: string;
+  labelHasta: string;
+  valueDesde: number | undefined;
+  valueHasta: number | undefined;
+  infinito: boolean;
+  setInfinito: React.Dispatch<React.SetStateAction<boolean>>;
+  onChangeDesde: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChangeHasta: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectInfinito: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  unidad?: string;
+}
+const InputRange: React.FC<InputRangeProps> = React.memo(({
+  labelDesde,
+  labelHasta,
+  valueDesde,
+  valueHasta,
+  infinito,
+  onChangeDesde,
+  onChangeHasta,
+  onSelectInfinito,
+  unidad = ""
+}) => (
+  <div className="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 border border-gray-200">
+    <div className="font-medium text-gray-700 border-b pb-2">{labelDesde.split(" ")[0]}</div>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-600 mb-1">{labelDesde}</label>
+      <div className="flex items-center">
+        <input
+          type="number"
+          value={valueDesde ?? ''}
+          onChange={onChangeDesde}
+          className="border border-gray-300 p-2 rounded w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          placeholder="0"
+        />
+        {unidad && <span className="ml-2 text-gray-600">{unidad}</span>}
+      </div>
+    </div>
+    
+    <div>
+      <label className="block text-sm font-medium text-gray-600 mb-1">{labelHasta}</label>
+      <div className="flex items-center gap-2">
+        <div className="w-full flex gap-2">
+          <select 
+            className="border border-gray-300 p-2 rounded text-sm flex-grow-0 w-1/3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            value={infinito ? 'infinito' : 'valor'}
+            onChange={onSelectInfinito}
+          >
+            <option value="valor">Valor</option>
+            <option value="infinito">Sin límite</option>
+          </select>
+          <div className="relative flex-grow">
+            <input
+              type="number"
+              value={valueHasta ?? ''}
+              onChange={onChangeHasta}
+              disabled={infinito}
+              placeholder={infinito ? "∞" : ""}
+              className={`border border-gray-300 p-2 rounded w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${infinito ? 'bg-gray-100 text-gray-500' : ''}`}
+            />
+            {infinito && (
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 text-lg">∞</span>
+              </div>
+            )}
+          </div>
+        </div>
+        {unidad && !infinito && <span className="text-gray-600">{unidad}</span>}
+      </div>
+    </div>
+  </div>
+));
 
 const ConfigTasasInversion: React.FC = () => {
   const [tasas, setTasas] = useState<TasaInversion[]>([]);
   const [form, setForm] = useState<Partial<TasaInversion>>({});
-  const [nextId, setNextId] = useState(1);
   const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState<string>("");
   const [montoHastaInfinito, setMontoHastaInfinito] = useState(false);
   const [plazoHastaInfinito, setPlazoHastaInfinito] = useState(false);
-
+  useEffect(() => {
+    const fetchTasas = async () => {
+      try {
+        const data = await getAllTasas();
+        setTasas(data);
+      } catch (err) {
+        console.error('Error al cargar tasas:', err);
+      }
+    };
+  
+    fetchTasas();
+  }, []);
+  
   // Lógica de componente mantenida como en el original
   const limpiarFormulario = () => {
     setForm({});
@@ -102,38 +187,45 @@ const ConfigTasasInversion: React.FC = () => {
   };
 
   // Funciones de manejo del formulario mantenidas
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const formToSubmit = { ...form };
     if (montoHastaInfinito) formToSubmit.montoHasta = undefined;
     if (plazoHastaInfinito) formToSubmit.plazoHasta = undefined;
-
-    const validacion = validarRango(formToSubmit);
-    if (validacion) {
-      setError(validacion);
-      return;
+  
+    const error = validarRango(formToSubmit);
+    if (error) return setError(error);
+  
+    try {
+      const nuevaTasa = await createTasa(formToSubmit as Omit<TasaInversion, 'id'>);
+      setTasas([...tasas, nuevaTasa]);
+      limpiarFormulario();
+    } catch (err) {
+      console.error("Error al agregar:", err);
     }
-
-    setTasas([...tasas, { id: nextId, ...formToSubmit } as TasaInversion]);
-    setNextId(nextId + 1);
-    limpiarFormulario();
   };
+  
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     const formToSubmit = { ...form };
     if (montoHastaInfinito) formToSubmit.montoHasta = undefined;
     if (plazoHastaInfinito) formToSubmit.plazoHasta = undefined;
-
+  
     const validacion = validarRango(formToSubmit, editId!);
     if (validacion) {
       setError(validacion);
       return;
     }
-
-    setTasas(
-      tasas.map(t => (t.id === editId ? { id: editId, ...formToSubmit } as TasaInversion : t))
-    );
-    limpiarFormulario();
+  
+    try {
+      await updateTasa(editId!, formToSubmit as Omit<TasaInversion, 'id'>);
+      const actualizada = { id: editId!, ...formToSubmit } as TasaInversion;
+      setTasas(tasas.map(t => (t.id === editId ? actualizada : t)));
+      limpiarFormulario();
+    } catch (err) {
+      console.error('Error al actualizar tasa:', err);
+    }
   };
+  
 
   const startEdit = (tasa: TasaInversion) => {
     setForm(tasa);
@@ -143,88 +235,23 @@ const ConfigTasasInversion: React.FC = () => {
     setPlazoHastaInfinito(tasa.plazoHasta === undefined);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm("¿Estás seguro de eliminar este rango de tasa?")) {
-      setTasas(tasas.filter(t => t.id !== id));
-      if (editId === id) limpiarFormulario();
+      try {
+        await deleteTasa(id); // llamar a la API
+        setTasas(tasas.filter(t => t.id !== id)); // actualizar UI
+        if (editId === id) limpiarFormulario();
+      } catch (err) {
+        console.error('Error al eliminar tasa:', err);
+        alert('No se pudo eliminar la tasa. Intenta nuevamente.');
+      }
     }
   };
 
   // Componente InputRange para evitar repetición y mejorar estructura
-  interface InputRangeProps {
-    labelDesde: string;
-    labelHasta: string;
-    valueDesde: number | undefined;
-    valueHasta: number | undefined;
-    infinito: boolean;
-    setInfinito: React.Dispatch<React.SetStateAction<boolean>>;
-    onChangeDesde: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onChangeHasta: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onSelectInfinito: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-    unidad?: string;
-  }
+ 
 
-  const InputRange: React.FC<InputRangeProps> = ({ 
-    labelDesde, 
-    labelHasta, 
-    valueDesde, 
-    valueHasta, 
-    infinito, 
-    onChangeDesde, 
-    onChangeHasta, 
-    onSelectInfinito,
-    unidad = ""
-  }) => (
-    <div className="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 border border-gray-200">
-      <div className="font-medium text-gray-700 border-b pb-2">{labelDesde.split(" ")[0]}</div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1">{labelDesde}</label>
-        <div className="flex items-center">
-          <input
-            type="number"
-            value={valueDesde ?? ''}
-            onChange={onChangeDesde}
-            className="border border-gray-300 p-2 rounded w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            placeholder="0"
-          />
-          {unidad && <span className="ml-2 text-gray-600">{unidad}</span>}
-        </div>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1">{labelHasta}</label>
-        <div className="flex items-center gap-2">
-          <div className="w-full flex gap-2">
-            <select 
-              className="border border-gray-300 p-2 rounded text-sm flex-grow-0 w-1/3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              value={infinito ? 'infinito' : 'valor'}
-              onChange={onSelectInfinito}
-            >
-              <option value="valor">Valor</option>
-              <option value="infinito">Sin límite</option>
-            </select>
-            <div className="relative flex-grow">
-              <input
-                type="number"
-                value={valueHasta ?? ''}
-                onChange={onChangeHasta}
-                disabled={infinito}
-                placeholder={infinito ? "∞" : ""}
-                className={`border border-gray-300 p-2 rounded w-full focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${infinito ? 'bg-gray-100 text-gray-500' : ''}`}
-              />
-              {infinito && (
-                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 text-lg">∞</span>
-                </div>
-              )}
-            </div>
-          </div>
-          {unidad && !infinito && <span className="text-gray-600">{unidad}</span>}
-        </div>
-      </div>
-    </div>
-  );
+ 
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8 pt-24 md:pt-32">

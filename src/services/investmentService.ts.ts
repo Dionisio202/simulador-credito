@@ -32,9 +32,9 @@ export const getAllTasas = async (): Promise<TasaInversion[]> => {
   export const createTasa = async (tasa: Omit<TasaInversion, 'id'>): Promise<TasaInversion> => {
     const payload = {
         min_amount: tasa.montoDesde,
-        max_amount: tasa.montoHasta !== undefined ? tasa.montoHasta : 9999999,
+        max_amount: tasa.montoHasta ,
         min_term_months: tasa.plazoDesde,
-        max_term_months: tasa.plazoHasta !== undefined ? tasa.plazoHasta : 999,
+        max_term_months: tasa.plazoHasta ,
         interest_rate: tasa.tasa
       };
       

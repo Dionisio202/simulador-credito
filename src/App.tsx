@@ -8,6 +8,7 @@ import PerspectivasMercado from './pages/PerspectivasMercado';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import SimuladorInversion from './pages/SimuladorInversion';
 
 import { API_URL } from './constants/api';
 import { setQuantumColorsFromAPI } from './styles/colors';
@@ -59,6 +60,8 @@ function App() {
         <Route path="/config-creditos" element={<ConfigCreditos />} />
         <Route path="/config-inversiones" element={<ConfigInversiones />} />
         <Route path="/config-interfaz" element={<ConfigInterfaz />} />
+        <Route path="/simulador-inversion" element={<SimuladorInversion />} />
+
       </Routes>
 
       <ToastContainer

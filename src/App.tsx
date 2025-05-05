@@ -16,6 +16,8 @@ import ConfigCreditos from "./pages/ConfigCreditos";
 import ConfigInversiones from "./pages/ConfigInversiones";
 import ConfigInterfaz from "./pages/ConfigInterfaz";
 import "react-toastify/dist/ReactToastify.css"; // 👈 Importas los estilos CSS
+import ProtectedRoute from './components/ProtectedRoute';
+
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -50,19 +52,26 @@ function App() {
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/vision-mercado/perspectivas" element={<PerspectivasMercado />} />
-        <Route
-          path="/vision-mercado/perspectivas"
-          element={<PerspectivasMercado />}
-        />
-        <Route path="/config-creditos" element={<ConfigCreditos />} />
-        <Route path="/config-inversiones" element={<ConfigInversiones />} />
-        <Route path="/config-interfaz" element={<ConfigInterfaz />} />
-        <Route path="/simulador-inversion" element={<SimuladorInversion />} />
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/vision-mercado/perspectivas" element={<PerspectivasMercado />} />
 
-      </Routes>
+  {/* Rutas protegidas solo para Admin */}
+  <Route path="/config-interfaz" element={
+    <ProtectedRoute element={<ConfigInterfaz />} allowedRoles={['Admin']} />
+  } />
+
+  {/* Rutas protegidas para Admin y Financiero */}
+  <Route path="/config-creditos" element={
+    <ProtectedRoute element={<ConfigCreditos />} allowedRoles={['Admin', 'Asesor']} />
+  } />
+  <Route path="/config-inversiones" element={
+    <ProtectedRoute element={<ConfigInversiones />} allowedRoles={['Admin', 'Asesor']} />
+  } />
+
+  <Route path="/simulador-inversion" element={<SimuladorInversion />} />
+</Routes>
+
 
       <ToastContainer
         position="top-right"

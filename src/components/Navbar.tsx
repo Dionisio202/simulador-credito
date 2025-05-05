@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../constants/api';
-import AdminMenu from './AdminMenu';
 
 interface RawMenuItem {
   id: number;
@@ -26,7 +25,29 @@ const Navbar = () => {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [configuracion, setConfiguracion] = useState<ConfiguracionGlobal | null>(null);
 
-  const isAdmin = true; // ✅ Asumimos que el usuario es administrador (reemplazar con auth real si es necesario)
+  const role = localStorage.getItem('role');
+  const token = localStorage.getItem('token');
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    if (!token) return;
+
+    try {
+      await fetch(`${API_URL}/users/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,8 +63,26 @@ const Navbar = () => {
         const res = await fetch(`${API_URL}/configuration/navbar`);
         const data: RawMenuItem[] = await res.json();
 
-        const parents = data.filter(item => item.parent_id === null).sort((a, b) => a.orden - b.orden);
-        const children = data.filter(item => item.parent_id !== null);
+        const allowed = data.filter(item => {
+          // Mostrar menú "Administración" a Admin y Financiero
+          if (item.id === 7) {
+            return role === 'Admin' || role === 'Asesor';
+          }
+        
+          // Filtrar hijos del menú Administración
+          if (item.parent_id === 7) {
+            if (role === 'Admin') return true;
+            if (role === 'Asesor') return item.id === 8 || item.id === 10;
+            return false;
+          }
+        
+          // Otros menús visibles a todos
+          return true;
+        });
+        
+
+        const parents = allowed.filter(item => item.parent_id === null).sort((a, b) => a.orden - b.orden);
+        const children = allowed.filter(item => item.parent_id !== null);
 
         const groupedChildren = children.reduce((acc, item) => {
           const parent = item.parent_id!;
@@ -57,9 +96,9 @@ const Navbar = () => {
           const submenuData = groupedChildren[parent.id];
           if (submenuData) {
             const submenu = Object.entries(submenuData).map(([category, items]) => ({ category, items }));
-            return { label: parent.label, path: parent.path, hasSubmenu: true, submenu };
+            return { label: parent.label, path: parent.path, hasSubmenu: true, submenu, id: parent.id };
           } else {
-            return { label: parent.label, path: parent.path, hasSubmenu: false };
+            return { label: parent.label, path: parent.path, hasSubmenu: false, id: parent.id };
           }
         });
 
@@ -70,7 +109,7 @@ const Navbar = () => {
     };
 
     fetchMenuItems();
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     const fetchConfiguracion = async () => {
@@ -134,13 +173,20 @@ const Navbar = () => {
                       <div key={idx} className="mb-6">
                         <h3 className="text-xs font-semibold text-gray-500 mb-4 uppercase tracking-wider">{section.category}</h3>
                         <ul className="space-y-2">
-                          {section.items.map((subItem: any, sIdx: number) => (
-                            <li key={sIdx}>
-                              <Link to={subItem.path} className="block text-gray-700 hover:text-gray-900 hover:bg-gray-50 p-2 rounded transition-colors duration-200">
-                                {subItem.label}
-                              </Link>
-                            </li>
-                          ))}
+                          {section.items
+                            .filter((subItem: any) => {
+                              if (subItem.label === 'Configuración de Interfaz') {
+                                return role === 'Admin';
+                              }
+                              return true;
+                            })
+                            .map((subItem: any, sIdx: number) => (
+                              <li key={sIdx}>
+                                <Link to={subItem.path} className="block text-gray-700 hover:text-gray-900 hover:bg-gray-50 p-2 rounded transition-colors duration-200">
+                                  {subItem.label}
+                                </Link>
+                              </li>
+                            ))}
                         </ul>
                       </div>
                     ))}
@@ -150,36 +196,19 @@ const Navbar = () => {
             </div>
           ))}
 
-          {isAdmin && (
-            <AdminMenu />
+          {token ? (
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition duration-300 ml-4"
+            >
+              Cerrar sesión
+            </button>
+          ) : (
+            <Link to="/login" className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded transition duration-300 ml-4">
+              Iniciar sesión
+            </Link>
           )}
-
-          <Link to="/login" className="bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded transition duration-300 ml-4">
-            Iniciar sesión
-          </Link>
         </div>
-
-        {menuOpen && (
-          <div className="absolute top-16 left-0 w-full bg-white shadow-md border-t">
-            <div className="flex flex-col p-4 space-y-4">
-              {menuItems.map((item, index) => (
-                <div key={index}>
-                  <Link to={item.path} className="block text-gray-800 py-2 hover:text-blue-700">{item.label}</Link>
-                  {item.hasSubmenu && item.submenu.map((section: any, idx: number) => (
-                    <div key={idx} className="ml-4 mt-2">
-                      {section.items.map((subItem: any, sIdx: number) => (
-                        <Link key={sIdx} to={subItem.path} className="block text-gray-600 py-1 hover:text-blue-600">{subItem.label}</Link>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ))}
-              <Link to="/login" className="bg-gray-900 text-white text-center font-medium py-2 px-4 rounded transition duration-300">
-                Iniciar sesión
-              </Link>
-            </div>
-          </div>
-        )}
       </div>
     </nav>
   );

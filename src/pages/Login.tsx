@@ -3,6 +3,7 @@ import { validateLoginForm } from '../utils/validateLoginForm';
 import { loginUser } from '../services/authService';
 import { toast } from 'react-toastify';
 import { API_URL } from '../constants/api';
+import { useNavigate } from 'react-router-dom';
 
 interface ConfigGlobal {
   nombreEmpresa: string;
@@ -16,6 +17,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const [config, setConfig] = useState<ConfigGlobal | null>(null);
 
@@ -45,7 +47,11 @@ const Login = () => {
     try {
       const response = await loginUser({ email, password });
       localStorage.setItem('token', response.token);
+      localStorage.setItem('role', response.role);
       toast.success('¡Bienvenido a Quantum Capital!');
+      navigate('/config-inversiones');
+
+      //console.log(response)
     } catch (error) {
       console.error('Error de login:', error);
       if (error instanceof Error) {

@@ -1,16 +1,28 @@
 import React from 'react';
+import ConfigGlobalForm from '../components/ConfigForms/ConfigGlobalForm';
+import HomeBannerForm from '../components/ConfigForms/HomeBannerForm';
+import HomeContactoForm from '../components/ConfigForms/HomeContactoForm';
+import HomeServiciosForm from '../components/ConfigForms/HomeServiciosForm';
+import HomeTestimoniosForm from '../components/ConfigForms/HomeTestimoniosForm';
+import NavbarConfigForm from '../components/ConfigForms/NavbarConfigForm';
+import PerspectivasMercadoForm from '../components/ConfigForms/PerspectivasMercadoForm';
+import QuienesSomosForm from '../components/ConfigForms/QuienesSomosForm.tsx';
 
-const ConfigInversiones: React.FC = () => {
+const ConfigInterfaz: React.FC = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-8">
-      <div className="bg-white p-10 rounded-lg shadow-md w-full max-w-3xl">
-        <h1 className="text-3xl font-semibold text-gray-800 mb-6">Configuración de Inversiones</h1>
-        <p className="text-gray-600">
-          Aquí podrás definir estrategias y configurar los productos de inversión que se ofrecen.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-100 text-gray-900 p-8 space-y-12">
+      <h1 className="text-3xl font-bold mb-8 text-center">Configuración del sitio web</h1>
+
+      <ConfigGlobalForm />
+      <HomeBannerForm />
+      <HomeContactoForm />
+      <HomeServiciosForm />
+      <HomeTestimoniosForm />
+      {/* <NavbarConfigForm /> */}
+      <PerspectivasMercadoForm />
+      <QuienesSomosForm />
     </div>
   );
 };
 
-export default ConfigInversiones;
+export default ConfigInterfaz;

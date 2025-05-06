@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import PerspectivasMercado from './pages/PerspectivasMercado';
+import SimuladorCredito from './pages/SimuladorCredito';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -70,6 +71,7 @@ function App() {
   } />
 
   <Route path="/simulador-inversion" element={<SimuladorInversion />} />
+  <Route path="/simulador-credito" element={<SimuladorCredito />} />
 </Routes>
 
 

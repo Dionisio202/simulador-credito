@@ -415,12 +415,12 @@ const ConfigGlobalForm: React.FC = () => {
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-0">
             <label className="block text-sm font-medium text-gray-700">Logo</label>
             <div className="flex items-center gap-3">
               {config.logoUrl && (
-                <div className="h-12 flex items-center">
-                  <img src={config.logoUrl} alt="Logo" className="h-full object-contain" />
+                <div className="h-30 w-80 flex items-center">
+                  <img src={"http://localhost:3000/"+config.logoUrl} alt="Logo" className="h-full object-contain" />
                 </div>
               )}
               {editMode && (

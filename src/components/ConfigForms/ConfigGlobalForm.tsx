@@ -366,9 +366,9 @@ const ConfigGlobalForm: React.FC = () => {
               </button>
               <button
                 onClick={handleSubmit}
-                disabled={saving || Object.keys(errors).length > 0}
+                disabled={saving || Object.values(errors).some((val) => !!val)}
                 className={`flex items-center gap-1 px-4 py-2 rounded-md ${
-                  saving || Object.keys(errors).length > 0 
+                  saving || Object.values(errors).some((val) => !!val) 
                     ? 'bg-blue-400 cursor-not-allowed' 
                     : 'bg-blue-600 hover:bg-blue-700'
                 } text-white`}

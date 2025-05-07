@@ -42,34 +42,36 @@ const QuienesSomosForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    let imagenUrl = formData.imagen_url;
-
-    if (imagenFile) {
-      const formDataFile = new FormData();
-      formDataFile.append('file', imagenFile);
-
-      try {
-        await axios.post('/upload', formDataFile, {
+    try {
+      let imagenUrl = formData.imagen_url;
+  
+      if (imagenFile) {
+        const formDataFile = new FormData();
+        formDataFile.append('file', imagenFile);
+  
+        const uploadRes = await axios.post('http://localhost:3000/upload-about-us', formDataFile, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
-        imagenUrl = `/public/${imagenFile.name}`;
-      } catch (error) {
-        console.error('Error al subir imagen', error);
-        return;
+  
+        if (uploadRes.data.filename) {
+          imagenUrl = `/${uploadRes.data.filename}`;
+        }
       }
-    }
-
-    try {
+  
+      // Ahora sí: usas la nueva imagenUrl correctamente
       await axios.put('http://localhost:3000/configuration/quienes-somos', {
         ...formData,
-        imagen_url: imagenUrl
+        imagen_url: imagenUrl,
       });
+  
       alert('Sección "Quiénes somos" actualizada exitosamente');
       setEditMode(false);
     } catch (error) {
       console.error('Error al actualizar', error);
+      alert('Error al guardar los cambios');
     }
   };
+  
 
   return (
     <div className="bg-white rounded shadow p-6">

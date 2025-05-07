@@ -63,27 +63,48 @@ const HomeBannerForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-
+  
     try {
-      const response = await fetch('http://localhost:3000/configuration/home-banner', {
+      // 1. Subir imagen si hay una nueva
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+  
+        const uploadRes = await fetch('http://localhost:3000/upload-home-banner', {
+          method: 'POST',
+          body: formData,
+        });
+  
+        if (!uploadRes.ok) throw new Error('Error al subir la imagen');
+  
+        const { filename } = await uploadRes.json();
+        banner.imagenUrl = `/${filename}`; // Actualizar con nueva ruta
+      }
+  
+      // 2. Actualizar título y subtítulo
+      const updateRes = await fetch('http://localhost:3000/configuration/home-banner', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(banner),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: banner.id,
+          titulo: banner.titulo,
+          subtitulo: banner.subtitulo,
+          imagenUrl: banner.imagenUrl,
+        }),
       });
-
-      if (!response.ok) throw new Error('Error al actualizar');
-
+  
+      if (!updateRes.ok) throw new Error('Error al actualizar datos del banner');
+  
       setEditMode(false);
       setError('');
     } catch (error) {
       console.error(error);
-      setError('Error al actualizar banner');
+      setError('Error al guardar los cambios');
     } finally {
       setSaving(false);
     }
   };
+  
 
   const cancelEdit = () => {
     fetch('http://localhost:3000/configuration/home-banner')

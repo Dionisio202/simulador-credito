@@ -186,37 +186,44 @@ const ConfigGlobalForm: React.FC = () => {
   // Enviar el formulario
   const handleSubmit = async (): Promise<void> => {
     if (!config) return;
-    
+  
     if (!validateForm()) {
       alert("Por favor, corrija los errores en el formulario antes de guardar");
       return;
     }
-    
+  
     setSaving(true);
-    
-    // Preparamos la data para enviar, asegurándonos que no hay nulls
-    const updatedConfig = {
-      ...config,
-      textoPrincipal: config.textoPrincipal ?? '',
-      textoSecundario: config.textoSecundario ?? '',
-      textoTerciario: config.textoTerciario ?? '',
-    };
-
+  
     try {
+      // Subir imagen si hay una nueva
       if (logoFile) {
         const formData = new FormData();
         formData.append("file", logoFile);
-        
-        const uploadRes = await axios.post<{ filename: string }>("/upload", formData, {
+  
+        await axios.post("http://localhost:3000/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        
-        updatedConfig.logoUrl = `/public/${uploadRes.data.filename}`;
       }
-      
+  
+      // Actualizar texto y colores
+      const updatedConfig = {
+        id: config.id,
+        nombreEmpresa: config.nombreEmpresa.trim(),
+        textoPrincipal: config.textoPrincipal ?? '',
+        textoSecundario: config.textoSecundario ?? '',
+        textoTerciario: config.textoTerciario ?? '',
+        backgroundWhite: config.backgroundWhite,
+        backgroundGray: config.backgroundGray,
+        backgroundDark: config.backgroundDark,
+        textLight: config.textLight,
+      };
+  
       await axios.put("http://localhost:3000/configuration/configuracion-global", updatedConfig);
+  
+      // ✅ Recargar config para obtener el nuevo logo_url desde la base de datos
+      await loadConfig();
+  
       setEditMode(false);
-      setOriginalConfig(JSON.parse(JSON.stringify(updatedConfig)));
       alert("Configuración actualizada correctamente");
     } catch (err) {
       console.error("Error al actualizar la configuración:", err);
@@ -225,6 +232,7 @@ const ConfigGlobalForm: React.FC = () => {
       setSaving(false);
     }
   };
+  
 
   // Cancelar y restaurar valores originales
   const handleCancel = (): void => {

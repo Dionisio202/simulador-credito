@@ -18,6 +18,7 @@ import ConfigInversiones from "./pages/ConfigInversiones";
 import ConfigInterfaz from "./pages/ConfigInterfaz";
 import "react-toastify/dist/ReactToastify.css"; // 👈 Importas los estilos CSS
 import ProtectedRoute from './components/ProtectedRoute';
+import UserManagementForm from './components/ConfigForms/UserManagementForm';
 
 
 function App() {
@@ -68,6 +69,10 @@ function App() {
   } />
   <Route path="/config-inversiones" element={
     <ProtectedRoute element={<ConfigInversiones />} allowedRoles={['Admin', 'Asesor']} />
+  } />
+
+<Route path="/usuarios" element={
+    <ProtectedRoute element={<UserManagementForm  />} allowedRoles={['Admin', 'Asesor']} />
   } />
 
   <Route path="/simulador-inversion" element={<SimuladorInversion />} />

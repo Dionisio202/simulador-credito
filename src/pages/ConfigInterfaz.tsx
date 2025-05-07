@@ -21,6 +21,7 @@ const ConfigInterfaz: React.FC = () => {
       {/* <NavbarConfigForm /> */}
       <PerspectivasMercadoForm />
       <QuienesSomosForm />
+
     </div>
   );
 };

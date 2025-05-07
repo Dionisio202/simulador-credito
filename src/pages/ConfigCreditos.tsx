@@ -11,12 +11,17 @@ interface CreditType {
   maxTermMonths: number;
 }
 
+interface AmountRange {
+  max: number;
+  value: number;
+}
+
 interface IndirectCharge {
   id: number;
   creditTypeId: number;
   name: string;
   chargeType: "percentage" | "fixed";
-  value: number;
+  amountRanges: AmountRange[];
 }
 
 const ConfigCreditos: React.FC = () => {
@@ -168,7 +173,7 @@ const ConfigCreditos: React.FC = () => {
   };
 
   const handleCreateIndirectCharge = async () => {
-    const { name, chargeType, value, creditTypeId } = newIndirectCharge;
+    const { name, chargeType, amountRanges, creditTypeId } = newIndirectCharge;
 
     if (!name || name.trim() === "") {
       showToast("El nombre del cargo es obligatorio.", "error");
@@ -183,21 +188,6 @@ const ConfigCreditos: React.FC = () => {
         "Seleccione un tipo de cargo válido (Porcentaje o Fijo).",
         "error"
       );
-      return;
-    }
-
-    if (value === undefined || isNaN(value)) {
-      showToast("El valor del cargo debe ser un número.", "error");
-      return;
-    }
-
-    if (chargeType === "percentage" && (value < 0 || value > 100)) {
-      showToast("El valor en porcentaje debe estar entre 0 y 100.", "error");
-      return;
-    }
-
-    if (chargeType === "fixed" && value < 0) {
-      showToast("El valor fijo no puede ser negativo.", "error");
       return;
     }
 
@@ -218,6 +208,60 @@ const ConfigCreditos: React.FC = () => {
         "error"
       );
       return;
+    }
+
+    if (!Array.isArray(amountRanges) || amountRanges.length === 0) {
+      showToast("Debe agregar al menos un rango de monto.", "error");
+      return;
+    }
+
+    for (let i = 0; i < amountRanges.length; i++) {
+      const current = amountRanges[i];
+
+      if (
+        current.max === undefined ||
+        current.value === undefined ||
+        isNaN(current.max) ||
+        isNaN(current.value)
+      ) {
+        showToast(
+          `Los valores del rango ${i + 1} no pueden estar vacíos.`,
+          "error"
+        );
+        return;
+      }
+
+      if (current.max <= 0 || current.value < 0) {
+        showToast(
+          `Los valores del rango ${i + 1} deben ser mayores o iguales a 0.`,
+          "error"
+        );
+        return;
+      }
+
+      if (i > 0) {
+        const prev = amountRanges[i - 1];
+
+        if (current.max <= prev.max) {
+          showToast(
+            `El monto máximo del rango ${
+              i + 1
+            } debe ser mayor que el anterior.`,
+            "error"
+          );
+          return;
+        }
+
+        if (current.value < prev.value) {
+          showToast(
+            `El valor del rango ${
+              i + 1
+            } no puede ser menor al del rango anterior.`,
+            "error"
+          );
+          return;
+        }
+      }
     }
 
     try {
@@ -333,7 +377,8 @@ const ConfigCreditos: React.FC = () => {
   };
 
   const handleUpdateIndirectCharge = async () => {
-    const { id, name, chargeType, value, creditTypeId } = newIndirectCharge;
+    const { id, name, chargeType, amountRanges, creditTypeId } =
+      newIndirectCharge;
 
     if (!id) return;
 
@@ -361,21 +406,6 @@ const ConfigCreditos: React.FC = () => {
       return;
     }
 
-    if (value === undefined || isNaN(value)) {
-      showToast("El valor del cargo debe ser un número.", "error");
-      return;
-    }
-
-    if (chargeType === "percentage" && (value < 0 || value > 100)) {
-      showToast("El valor en porcentaje debe estar entre 0 y 100.", "error");
-      return;
-    }
-
-    if (chargeType === "fixed" && value < 0) {
-      showToast("El valor fijo no puede ser negativo.", "error");
-      return;
-    }
-
     if (!creditTypeId || isNaN(creditTypeId)) {
       showToast("Debe seleccionar un tipo de crédito asociado.", "error");
       return;
@@ -394,6 +424,60 @@ const ConfigCreditos: React.FC = () => {
         "error"
       );
       return;
+    }
+
+    if (!Array.isArray(amountRanges) || amountRanges.length === 0) {
+      showToast("Debe agregar al menos un rango de monto.", "error");
+      return;
+    }
+
+    for (let i = 0; i < amountRanges.length; i++) {
+      const current = amountRanges[i];
+
+      if (
+        current.max === undefined ||
+        current.value === undefined ||
+        isNaN(current.max) ||
+        isNaN(current.value)
+      ) {
+        showToast(
+          `Los valores del rango ${i + 1} no pueden estar vacíos.`,
+          "error"
+        );
+        return;
+      }
+
+      if (current.max <= 0 || current.value < 0) {
+        showToast(
+          `Los valores del rango ${i + 1} deben ser mayores o iguales a 0.`,
+          "error"
+        );
+        return;
+      }
+
+      if (i > 0) {
+        const prev = amountRanges[i - 1];
+
+        if (current.max <= prev.max) {
+          showToast(
+            `El monto máximo del rango ${
+              i + 1
+            } debe ser mayor que el anterior.`,
+            "error"
+          );
+          return;
+        }
+
+        if (current.value < prev.value) {
+          showToast(
+            `El valor del rango ${
+              i + 1
+            } no puede ser menor al del rango anterior.`,
+            "error"
+          );
+          return;
+        }
+      }
     }
 
     try {
@@ -630,7 +714,16 @@ const ConfigCreditos: React.FC = () => {
                   Cargos Indirectos
                 </h2>
                 <button
-                  onClick={() => setIsChargeModalOpen(true)}
+                  onClick={() => {
+                    setNewIndirectCharge({
+                      name: "",
+                      chargeType: "percentage",
+                      amountRanges: [],
+                      creditTypeId: 0,
+                    });
+                    setIsChargeModalOpen(true);
+                  }}
+                  // setIsChargeModalOpen(true)
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
                 >
                   <svg
@@ -690,9 +783,6 @@ const ConfigCreditos: React.FC = () => {
                         Tipo
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Valor
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Crédito Asociado
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -723,18 +813,14 @@ const ConfigCreditos: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {ic.chargeType === "percentage"
-                            ? `${ic.value}%`
-                            : `$${ic.value.toFixed(2)}`}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           {creditTypes.find((c) => c.id === ic.creditTypeId)
                             ?.name || "N/A"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                           <button
                             onClick={() => {
-                              setNewIndirectCharge(ic); // Carga los datos al modal
+                              const freshCopy = JSON.parse(JSON.stringify(ic));
+                              setNewIndirectCharge(freshCopy);
                               setIsChargeModalOpen(true);
                             }}
                             title="Ver Detalles"
@@ -971,13 +1057,14 @@ const ConfigCreditos: React.FC = () => {
             </div>
 
             <div className="p-6">
+              {/* Nombre */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej: Comisión de apertura"
+                  placeholder="Ej: Seguro de vida"
                   value={newIndirectCharge.name || ""}
                   onChange={(e) =>
                     setNewIndirectCharge({
@@ -985,10 +1072,11 @@ const ConfigCreditos: React.FC = () => {
                       name: e.target.value,
                     })
                   }
-                  className="block w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                  className="block w-full border border-gray-300 rounded-lg px-4 py-2"
                 />
               </div>
 
+              {/* Tipo de cargo */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tipo de Cargo
@@ -996,7 +1084,7 @@ const ConfigCreditos: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    className={`py-2 px-4 text-center rounded-lg transition-all ${
+                    className={`py-2 px-4 rounded-lg transition-all ${
                       newIndirectCharge.chargeType === "percentage"
                         ? "bg-purple-100 text-purple-800 border-2 border-purple-300"
                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -1012,7 +1100,7 @@ const ConfigCreditos: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    className={`py-2 px-4 text-center rounded-lg transition-all ${
+                    className={`py-2 px-4 rounded-lg transition-all ${
                       newIndirectCharge.chargeType === "fixed"
                         ? "bg-orange-100 text-orange-800 border-2 border-orange-300"
                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -1029,31 +1117,86 @@ const ConfigCreditos: React.FC = () => {
                 </div>
               </div>
 
+              {/* Rangos */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {newIndirectCharge.chargeType === "percentage"
-                    ? "Valor (%)"
-                    : "Valor ($)"}
+                  Rangos por monto
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder={
-                    newIndirectCharge.chargeType === "percentage"
-                      ? "Ej: 2.5"
-                      : "Ej: 150.00"
-                  }
-                  value={newIndirectCharge.value || ""}
-                  onChange={(e) =>
+                {(newIndirectCharge.amountRanges || []).map((range, idx) => (
+                  <div key={idx} className="flex gap-2 mb-2">
+                    <input
+                      type="number"
+                      placeholder="Monto máximo"
+                      className="w-1/2 border px-3 py-2 rounded"
+                      value={!isNaN(range.max) ? range.max : ""}
+                      onChange={(e) => {
+                        const updated = [
+                          ...(newIndirectCharge.amountRanges || []),
+                        ];
+                        updated[idx].max = parseFloat(e.target.value);
+                        setNewIndirectCharge({
+                          ...newIndirectCharge,
+                          amountRanges: updated,
+                        });
+                      }}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Valor"
+                      className="w-1/2 border px-3 py-2 rounded"
+                      value={!isNaN(range.value) ? range.value : ""}
+                      onChange={(e) => {
+                        const updated = [
+                          ...(newIndirectCharge.amountRanges || []),
+                        ];
+                        updated[idx].value = parseFloat(e.target.value);
+                        setNewIndirectCharge({
+                          ...newIndirectCharge,
+                          amountRanges: updated,
+                        });
+                      }}
+                    />
+
+                    <button
+                      className="text-red-500 font-bold"
+                      onClick={() => {
+                        const updated = [
+                          ...(newIndirectCharge.amountRanges || []),
+                        ];
+                        updated.splice(idx, 1);
+                        setNewIndirectCharge({
+                          ...newIndirectCharge,
+                          amountRanges: updated,
+                        });
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  className="text-green-600 text-sm mt-1 hover:underline"
+                  onClick={() =>
                     setNewIndirectCharge({
                       ...newIndirectCharge,
-                      value: parseFloat(e.target.value),
+                      amountRanges: [
+                        ...(newIndirectCharge.amountRanges || []),
+                        { max: NaN, value: NaN },
+                      ],
                     })
                   }
-                  className="block w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
-                />
+                >
+                  + Agregar Rango
+                </button>
               </div>
-
+              {newIndirectCharge.amountRanges &&
+                newIndirectCharge.amountRanges.length > 0 && (
+                  <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 text-sm rounded-md px-4 py-2 mb-4">
+                    Si no cubres todos los rangos posibles, se tomará el último
+                    rango como <strong>“en adelante”</strong> automáticamente.
+                  </div>
+                )}
+              {/* Tipo de crédito asociado */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tipo de Crédito Asociado
@@ -1066,7 +1209,7 @@ const ConfigCreditos: React.FC = () => {
                       creditTypeId: parseInt(e.target.value),
                     })
                   }
-                  className="block w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                  className="block w-full border border-gray-300 rounded-lg px-4 py-2"
                 >
                   <option value="">Seleccione un tipo de crédito</option>
                   {creditTypes.map((ct) => (
@@ -1077,10 +1220,11 @@ const ConfigCreditos: React.FC = () => {
                 </select>
               </div>
 
+              {/* Botones */}
               <div className="flex space-x-3">
                 <button
                   onClick={() => setIsChargeModalOpen(false)}
-                  className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
@@ -1092,7 +1236,7 @@ const ConfigCreditos: React.FC = () => {
                       handleCreateIndirectCharge();
                     }
                   }}
-                  className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                 >
                   Guardar
                 </button>

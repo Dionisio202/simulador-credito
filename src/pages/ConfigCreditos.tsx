@@ -873,7 +873,7 @@ const ConfigCreditos: React.FC = () => {
 
       {/* Modal - Nuevo Tipo de Crédito */}
       {isCreditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-xl overflow-hidden animate-fadeIn">
             <div className="flex justify-between items-center border-b px-6 py-4">
               <h2 className="text-xl font-semibold text-gray-800">
@@ -1029,7 +1029,7 @@ const ConfigCreditos: React.FC = () => {
 
       {/* Modal - Nuevo Cargo Indirecto */}
       {isChargeModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-fadeIn">
             <div className="flex justify-between items-center border-b px-6 py-4">
               <h2 className="text-xl font-semibold text-gray-800">

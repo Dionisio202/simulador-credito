@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Pencil, Check, X, Eye, Save, AlertTriangle, RefreshCw } from "lucide-react";
+import { Pencil, Check, X, Eye, Save, AlertTriangle, RefreshCw, Upload, Image as ImageIcon } from "lucide-react";
 import axios from "axios";
 
 interface ConfigGlobal {
@@ -75,6 +75,8 @@ const ConfigGlobalForm: React.FC = () => {
   const [saving, setSaving] = useState<boolean>(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState<boolean>(false);
+  const [fileName, setFileName] = useState<string>("");
 
   // Cargar la configuración
   const loadConfig = async (): Promise<void> => {
@@ -144,21 +146,51 @@ const ConfigGlobalForm: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     if (file && config) {
-      // Validación de tipo y tamaño de archivo
-      const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml'];
-      if (!validTypes.includes(file.type)) {
-        alert("Por favor, seleccione un archivo de imagen válido (JPEG, PNG o SVG)");
-        return;
-      }
-      
-      if (file.size > 2 * 1024 * 1024) { // 2MB
-        alert("El archivo es demasiado grande. El tamaño máximo es 2MB");
-        return;
-      }
-      
-      setLogoFile(file);
-      // Mostramos una vista previa local del logo
-      setConfig({ ...config, logoUrl: URL.createObjectURL(file) });
+      processFile(file);
+    }
+  };
+
+  // Procesar archivo (usado tanto para input como para drag & drop)
+  const processFile = (file: File): void => {
+    if (!config) return;
+    
+    // Validación de tipo y tamaño de archivo
+    const validTypes = ['image/jpeg', 'image/png', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      alert("Por favor, seleccione un archivo de imagen válido (JPEG, PNG o SVG)");
+      return;
+    }
+    
+    if (file.size > 2 * 1024 * 1024) { // 2MB
+      alert("El archivo es demasiado grande. El tamaño máximo es 2MB");
+      return;
+    }
+    
+    setLogoFile(file);
+    setFileName(file.name);
+    // Mostramos una vista previa local del logo
+    setConfig({ ...config, logoUrl: URL.createObjectURL(file) });
+  };
+
+  // Manejo de eventos de arrastrar y soltar
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -233,7 +265,6 @@ const ConfigGlobalForm: React.FC = () => {
     }
   };
   
-
   // Cancelar y restaurar valores originales
   const handleCancel = (): void => {
     if (originalConfig) {
@@ -241,6 +272,8 @@ const ConfigGlobalForm: React.FC = () => {
     }
     setEditMode(false);
     setErrors({});
+    setLogoFile(null);
+    setFileName("");
   };
 
   // Componente de selección de colores
@@ -423,25 +456,68 @@ const ConfigGlobalForm: React.FC = () => {
             )}
           </div>
 
-          <div className="space-y-0">
+          <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">Logo</label>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              {/* Vista previa del logo */}
               {config.logoUrl && (
-                <div className="h-30 w-80 flex items-center">
-                  <img src={"http://localhost:3000/"+config.logoUrl} alt="Logo" className="h-full object-contain" />
+                <div className="mb-3 p-2 border border-gray-200 rounded-md bg-gray-50 flex justify-center">
+                  <img 
+                    src={config.logoUrl.startsWith('blob:') ? config.logoUrl : "http://localhost:3000/"+config.logoUrl} 
+                    alt="Logo" 
+                    className="h-32 object-contain"
+                  />
                 </div>
               )}
+              
+              {/* Área de carga de archivo mejorada */}
               {editMode && (
-                <div className="flex-1">
+                <div 
+                  onDragEnter={handleDrag}
+                  onDragOver={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDrop={handleDrop}
+                  className={`
+                    relative border-2 border-dashed rounded-lg p-6
+                    ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'} 
+                    transition-colors duration-200 ease-in-out
+                    flex flex-col items-center justify-center text-center
+                  `}
+                >
                   <input
                     type="file"
+                    id="logo-upload"
                     accept="image/jpeg,image/png,image/svg+xml"
                     onChange={handleFileChange}
-                    className="w-full"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Formatos: JPG, PNG, SVG. Tamaño máximo: 2MB
-                  </p>
+                  
+                  <div className="flex flex-col items-center">
+                    {logoFile ? (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                          <ImageIcon size={24} className="text-blue-600" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">{fileName}</p>
+                        <p className="text-xs text-gray-500 mt-1">Archivo seleccionado</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                          <Upload size={24} className="text-gray-600" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">
+                          Arrastra y suelta tu logo aquí o
+                        </p>
+                        <p className="text-sm text-blue-600 font-medium mt-1">
+                          Haz clic para seleccionar un archivo
+                        </p>
+                      </>
+                    )}
+                    <p className="text-xs text-gray-500 mt-3">
+                      Formatos: JPG, PNG, SVG. Tamaño máximo: 2MB
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

@@ -127,7 +127,7 @@ const QuienesSomosForm: React.FC = () => {
           />
           {formData.imagen_url && (
             <img
-              src={formData.imagen_url}
+              src={"http://localhost:3000"+formData.imagen_url}
               alt="Previsualización"
               className="mt-2 h-32 object-contain rounded"
             />

@@ -33,7 +33,7 @@ const HomeBannerForm = () => {
         const data = await res.json();
         const item = data[0];
         setBanner(item);
-        setPreview(`http://localhost:5173${item.imagenUrl}`);
+        setPreview(`http://localhost:3000${item.imagenUrl}`);
         setError('');
       } catch (err) {
         console.error('Error al cargar banner', err);
@@ -91,7 +91,7 @@ const HomeBannerForm = () => {
       .then(data => {
         const item = data[0];
         setBanner(item);
-        setPreview(`http://localhost:5173${item.imagenUrl}`);
+        setPreview(`http://localhost:3000${item.imagenUrl}`);
         setFile(null);
         setEditMode(false);
       });
